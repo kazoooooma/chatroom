@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Chatroom</title>
+<link rel="stylesheet" href="./css/chatroom.css">
+</head>
+<body>
+
+<div id="headercontainer">
+    <p id="headerimage">
+        <img src="./imgs/title.png" alt="" width="50%">
+    </p>
+</div>
+<!-- コンテンツ表示画面 -->
+
+<div id="movie1_container">
+    <img src="./imgs/catch_me.jpeg" alt="" width="150px">
+    <div class="movie_info">
+      <p class="movie_title">キャッチ・ミー・イフ・ユー・キャン（2002年）</p>
+      <p>監督：スティーブン・スピルバーグ　　出演：レオナルド・デカプリオ、トム・ハンクス　他</p>
+      <p>フランク・アバグネイルの自伝小説を原作に、レオナルド・ディカプリオとトム・ハンクスの豪華共演で映像化。16歳から21歳までに大金を稼いだ天才詐欺師とそれを追うFBI捜査官の姿を描くクライム・コメディ。</p>
+    </div>
+  </div>
+
+<div id="inputcontainer">
+
+    <div id="username">
+        <span>ニックネーム: </span><input type="text" id="uname">
+    </div>
+
+    <div id="fileselect">
+        <br><br>
+        <input type="file" id="icon" multiple>
+        <div id="preview"></div>
+    </div>
+
+
+    <br>
+        <form id="rating" type="get" action="">
+            <div class="stars">
+              <input id="star5" type="radio" name="star" value="5" />
+              <label for="star5">★</label>
+              <input id="star4" type="radio" name="star" value="4" />
+              <label for="star4">★</label>
+              <input id="star3" type="radio" name="star" value="3" />
+              <label for="star3">★</label>
+              <input id="star2" type="radio" name="star" value="2" />
+              <label for="star2">★</label>
+              <input id="star1" type="radio" name="star" value="1" />
+              <label for="star1">★</label>
+            </div>
+          </form>
+    </br>
+
+    <div id="#textarea">
+        <div id="textinside">
+            <textarea name="" id="text" cols="30" rows="10"></textarea>
+            <br><p id="sendbutton"><button id="send">送信</button></p> 
+        </div>
+    </div>
+    <div id="output"></div>
+</div>
+
+<!--/ コンテンツ表示画面 -->
+
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- JQuery -->
+
+
+<!--** 以下Firebase **-->
+
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    // Firebasejsから、初期化ができるツールを取り出している
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+    import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+        from "https://cdnjs.cloudflare.com/ajax/libs/firebase/9.6.0/firebase-database.min.js";
+  
+    // Your web app's Firebase configuration
+    // どこのFirebaseに接続するかを指定
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEUYyXJM03ajuvaNZ7oY-a9T-UQIRO-2A",
+      authDomain: "myfirstapp-31d37.firebaseapp.com",
+      projectId: "myfirstapp-31d37",
+      storageBucket: "myfirstapp-31d37.appspot.com",
+      messagingSenderId: "264861459737",
+      appId: "1:264861459737:web:8748623ee4abe5c5999188"
+    };
+  
+    // Initialize Firebase
+    // firebaseの設定情報を、initializeappに入れ込んでいる
+    const app = initializeApp(firebaseConfig);
+
+    const db = getDatabase(app); // RealtimeDBに接続
+    const dbRef = ref(db, "chat"); // RealtimeDB内の"chat"を使う
+
+    $("#send").on("click", function(){
+        const uname = $("#uname").val();
+        const text = $("#text").val();
+        const msg = { //オブジェクト生成
+            uname: uname,
+            text: text
+        }
+        const newPostRef = push(dbRef); // pushできる状態にする(型をDBに作る)
+        set(newPostRef, msg); // DBに値を送信
+    });
+
+    $("#text").on("keydown", function(e){
+        if(e.keyCode === 13){
+            const uname = $("#uname").val();
+            const text = $("#text").val();
+            const msg = { //オブジェクト生成
+            uname: uname,
+            text: text
+        }
+            const newPostRef = push(dbRef); // pushできる状態にする(型をDBに作る)
+            set(newPostRef, msg); // DBに値を送信
+        }
+    });
+
+
+    onChildAdded(dbRef, function(data){
+        // onChildAddedはデータを１つずつ①ページが読み込まれた時に取得、②新しく保存されたときに通知とデータが取得され、dataに格納される
+        const msg = data.val();
+        const datakey = data.key;
+        let h = "<div class='post'><p class='nickname'>";
+        h += msg.uname;
+        h += "</p>";
+        h += msg.text;
+        h += "<img src='' id='star' width='20px'>"
+        h += "<br><button class='delbutton' id='";
+        h += datakey;
+        h += "'>投稿を削除</button>";
+        h += "</div>";
+        $("#output").append(h); // #output の最後に追加
+    });
+
+    $(document).on("click",".delbutton",function(){ //documentによって追加されたHTMLに対して適用される
+    remove(ref(db, "chat/" +$(this).attr("id"))); //thisはボタンを指す、idはボタンのID
+    $(this).parent().remove();//ボタンの親要素を削除(parentがないと、ボタンが消える)
+    });
+
+//     $(function() {
+//     //ラジオボタンをチェックしたら発動
+//     $('input[name="star"]').change(function() {
+//         //選択したvalue値を変数に格納
+//         var val = $(this).val();
+//         if (val == 1) {
+//             let img = document.getElementById("star");
+//             img.src = "./imgs/star.png";
+//         } else if (val == 2) {
+//             let img = document.getElementById("star");
+//             img.src = "./imgs/star.png";
+//             // 年齢がそれ以外だったら
+//         } else if (val == 3){
+//             let img = document.getElementById("star");
+//             img.src = "./imgs/star.png";
+//         } else if (val == 4){
+//             let img = document.getElementById("star");
+//             img.src = "./imgs/star.png";
+//         } else if (val == 5){
+//             let img = document.getElementById("star");
+//             img.src = "./imgs/star.png";
+//     });
+// });
+
+
+    function previewFile(file) { 
+        const preview = document.getElementById('preview'); // プレビュー画像を追加
+        const reader = new FileReader();  // FileReaderオブジェクトを作成
+        reader.onload = function (e) {   // ファイルが読み込まれたときに実行する
+            const imageUrl = e.target.result; // 画像のURLはevent.target.resultで呼び出せる
+            const img = document.createElement("img"); // img要素を作成
+            img.src = imageUrl; // 画像のURLをimg要素にセット
+            preview.appendChild(img); // #previewの中に追加
+        }
+        reader.readAsDataURL(file);   // ファイルを読み込む
+}
+    // <input>でファイルが選択されたときの処理
+    const fileInput = document.getElementById('icon');
+    const handleFileSelect = () => {
+    const files = fileInput.files;
+    for (let i = 0; i < files.length; i++) {
+        previewFile(files[i]);
+    }
+    }
+    fileInput.addEventListener('change', handleFileSelect);
+
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
